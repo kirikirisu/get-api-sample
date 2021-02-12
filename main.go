@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"io"
 	"net/http"
 )
 
@@ -43,20 +42,23 @@ func main() {
 	url := fmt.Sprintf("http://api.openweathermap.org/data/2.5/weather?q=nagano&appid=%s", Key)
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error get api:", err)
+		return
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
+
+	decoder := json.NewDecoder(resp.Body)
+	for {
+		var data Data
+		err := decoder.Decode(&data)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			fmt.Println("Error decode json:", err)
+			return
+		}
+		fmt.Println(data)
 	}
-
-	var data Data
-
-	if err := json.Unmarshal(body, &data); err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(data)
 }
